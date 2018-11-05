@@ -1,1 +1,1 @@
-default_app_config = 'elasticsearchapp.apps.ElasticsearchappConfig'
+# default_app_config = 'elasticsearchapp.apps.ElasticsearchappConfig'

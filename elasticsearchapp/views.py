@@ -1,42 +1,30 @@
-# Create your views here.
-# search_term = request.GET.get('search_term', None)
-# filter_value = request.GET.get('filter_value', None)
-# context = dict()
-# if search_term:
-# vendors = search(search_term, content_type=Vendor).order_by('-created_at')
-
 # python imports
 
 # third party imports
-from django.db.models import Q
 from rest_framework import (
     status
 )
 from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
 # local imports
-from .models import BlogPost
-from .search import *
+from .global_search import *
+from .serializers import BlogPostSerializer
 
 
-def search_blog_post(request):
-    """
-    Check email/username is exist in database or not
+class BlogPostView(ModelViewSet):
+    serializer_class = BlogPostSerializer
+    queryset = BlogPost.objects.all()
+    http_method_names = ('get',)
 
-    :param : request data email/username
-    :return: true/false
-    :status: 200 or 400
-    """
-    email = request.GET.get('email', None)
-    search_term = request.GET.get('search_term', None)
-    context = dict()
-    if search_term:
-        blog_post_qs = global_search(search_term, content_type=BlogPost).order_by('-created_at')
-    message = dict()
-    status_code = status.HTTP_400_BAD_REQUEST
-    if email:
-        message.update({"is_user_exist": False})
-        status_code = status.HTTP_200_OK
-        if BlogPost.objects.filter(Q(email=email.lower()) | Q(username=email)).exists():
-            message.update({"is_user_exist": True})
-    return Response(message, status=status_code)
+    def list(self, request, *args, **kwargs):
+        search_term = request.GET.get('search_term', None)
+        message = dict()
+        message.update({"details": False})
+        status_code = status.HTTP_400_BAD_REQUEST
+        if search_term:
+            blog_post_qs = global_search(search_term, model_name=BlogPost)
+            serializer = self.serializer_class(blog_post_qs, many=True).data
+            status_code = status.HTTP_200_OK
+            return Response(serializer, status=status_code)
+        return Response(message, status=status_code)
